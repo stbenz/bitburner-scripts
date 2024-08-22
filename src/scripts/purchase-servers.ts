@@ -41,7 +41,7 @@ export async function main(ns: NS) {
   while (i < maxServers) {
     // purchase a server if enough money available
     if (ns.getServerMoneyAvailable("home") * spendRatio > ns.getPurchasedServerCost(ram)) {
-      const hostname = ns.purchaseServer(ns.sprintf("pserv-%03d", i), ram);
+      const hostname = ns.purchaseServer(ns.sprintf("pserv-%02d", i), ram);
       ++i;
 
       ns.print("bought " + hostname + " (" + ns.formatRam(ram) + ")");
