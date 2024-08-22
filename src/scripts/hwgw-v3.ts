@@ -34,10 +34,10 @@ const gMinChanceForGrow = 0.85;
 const gMinChanceForHack = 0.9;
 
 // max number of pure weaken processes
-const gMaxWeakenProcesses = 5;
+const gMaxWeakenProcesses = 10;
 
 // max number of grow+weaken processes
-const gMaxGrowProcesses = 5;
+const gMaxGrowProcesses = 10;
 
 // max number of parallel hack+weaken+grow+weaken processes per target
 const gMaxPrallelHackProcesses = 50;
