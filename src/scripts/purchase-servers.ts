@@ -5,8 +5,8 @@ export async function main(ns: NS) {
   ns.disableLog("ALL");
   ns.setTitle("purchase servers");
 
-  // don't spend more than 80% of available money
-  const spendRatio = 0.8;
+  // don't spend more than 50% of available money
+  const spendRatio = 0.5;
 
   // initial ram size to purchase
   let ram = 64;
