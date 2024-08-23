@@ -7,9 +7,6 @@ const gSellLongTrigger = 0.5;
 // minimum transaction
 const gMinTransaction = 5_000_000;
 
-// initial capital to use for stock market
-const gStockCapital = 1_000_000_000_000;
-
 class StockInfo {
   sym: string;
   askPrice: number = 0;
@@ -77,35 +74,47 @@ export async function main(ns: NS) {
   const sc = ns.stock.getConstants();
 
   // buy access to stock market
-  while (!ns.stock.hasWSEAccount() && !ns.stock.purchaseWseAccount()) {
-    ns.print("WARN: failed to purchase WSE account");
-    await ns.sleep(5000);
+  if (!ns.stock.hasWSEAccount() && !ns.stock.purchaseWseAccount()) {
+    ns.print("ERROR: failed to purchase WSE account");
+    return;
   }
-  while (!ns.stock.hasTIXAPIAccess() && !ns.stock.purchaseTixApi()) {
-    ns.print("WARN: failed to purchase TIX API access");
-    await ns.sleep(5000);
+  if (!ns.stock.hasTIXAPIAccess() && !ns.stock.purchaseTixApi()) {
+    ns.print("ERROR: failed to purchase TIX API access");
+    return;
   }
-  while (!ns.stock.has4SData() && !ns.stock.purchase4SMarketData()) {
-    ns.print("WARN: failed to purchase 4S data");
-    await ns.sleep(5000);
+  if (!ns.stock.has4SData() && !ns.stock.purchase4SMarketData()) {
+    ns.print("ERROR: failed to purchase 4S data");
+    return;
   }
-  while (!ns.stock.has4SDataTIXAPI() && !ns.stock.purchase4SMarketDataTixApi()) {
-    ns.print("WARN: failed to purchase 4S data TIX API");
-    await ns.sleep(5000);
+  if (!ns.stock.has4SDataTIXAPI() && !ns.stock.purchase4SMarketDataTixApi()) {
+    ns.print("ERROR: failed to purchase 4S data TIX API");
+    return;
   }
 
   // contains all stock data
   const stocks = ns.stock.getSymbols().map((s) => new StockInfo(s));
 
   // stock capital
-  let cash = gStockCapital;
+  let cash = 0;
+  let capital = 0;
 
   // keep track of paid commissions
   let commission = 0;
 
+  // port to receive budget
+  const port = ns.getPortHandle(200);
+  
   while (true) {
     // wait for next update
     await ns.stock.nextUpdate();
+
+    // get budget from port
+    while (!port.empty()) {
+      const b = port.read() as number;
+      ns.print("INFO: increased capital by " + ns.formatNumber(b));
+      cash += b;
+      capital += b;
+    }
 
     // update stock data
     stocks.forEach((s) => s.update(ns));
@@ -113,11 +122,12 @@ export async function main(ns: NS) {
     // print stock info
     const stockValue = stocks.reduce((a, c) => a + c.getValue(), 0);
     const stockProfit = stocks.reduce((a, c) => a + c.getProfit(), 0);
+    ns.print("capital:      $" + ns.formatNumber(capital));
     ns.print("cash:         $" + ns.formatNumber(cash));
     ns.print("stock value:  $" + ns.formatNumber(stockValue));
     ns.print("stock profit: $" + ns.formatNumber(stockProfit));
     ns.print("commissions:  $" + ns.formatNumber(commission));
-    ns.print("net worth:    $" + ns.formatNumber(cash + stockValue));
+    ns.print("net profit:   $" + ns.formatNumber(cash + stockValue - capital - commission));
     
     // sell stocks
     const sellStocks = stocks
