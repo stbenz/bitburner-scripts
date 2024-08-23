@@ -22,23 +22,27 @@ const WANTED_PENALTY_THRES_LOW = 0.99;
 const MIN_STATS_SUM_ABS = 300;
 
 // relative minimum stats sum factor (start train below this)
-const MIN_STATS_SUM_FACTOR = 0.6;
+const MIN_STATS_SUM_FACTOR = 0.5;
 
 // relative maximum stats sum factor (stop train above this)
-const MAX_STATS_SUM_FACTOR = 0.7;
+const MAX_STATS_SUM_FACTOR = 0.6;
 
 // combat stat weight
-const COMBAT_STAT_WEIGHT = 10;
+const MAIN_STAT_WEIGHT = 10;
 
 // hacking stat weight
-const HACKING_STAT_WEIGHT = 1.2;
+const SECONDARY_STAT_WEIGHT = 1.5;
 
 // charisma stat weight
-const CHARISMA_STAT_WEIGTH = 1;
+const TETRIARY_STAT_WEIGTH = 1;
 
 const TASK_UNASSIGNED = "Unassigned";
 const TASK_WARFARE = "Territory Warfare";
 const TASK_VIGILANTE = "Vigilante Justice";
+
+const TASK_TRAIN_COMBAT = "Train Combat";
+const TASK_TRAIN_HACKING = "Train Hacking";
+const TASK_TRAIN_CHARISMA = "Train Charisma";
 
 interface ITrainTask {
   name: string;
@@ -46,66 +50,129 @@ interface ITrainTask {
   statlvl: (i: GangMemberInfo) => number;
 }
 
+// tail verbosity
+const gVerbosity = 0;
+
+const gTrainTasks = [TASK_TRAIN_COMBAT, TASK_TRAIN_HACKING, TASK_TRAIN_CHARISMA];
+
 const gTrainTasksCombat: ITrainTask[] = [
-  { name: "Train Combat", weight: COMBAT_STAT_WEIGHT, statlvl: (i) => (i.str + i.def + i.dex + i.agi) / 4 },
-  { name: "Train Hacking", weight: HACKING_STAT_WEIGHT, statlvl: (i) => i.hack },
-  { name: "Train Charisma", weight: CHARISMA_STAT_WEIGTH, statlvl: (i) => i.cha }
+  { name: TASK_TRAIN_COMBAT, weight: MAIN_STAT_WEIGHT, statlvl: (i) => (i.str + i.def + i.dex + i.agi) / 4 },
+  { name: TASK_TRAIN_HACKING, weight: SECONDARY_STAT_WEIGHT, statlvl: (i) => i.hack },
+  { name: TASK_TRAIN_CHARISMA, weight: TETRIARY_STAT_WEIGTH, statlvl: (i) => i.cha }
+];
+
+const gTrainTasksHacking: ITrainTask[] = [
+  { name: TASK_TRAIN_COMBAT, weight: SECONDARY_STAT_WEIGHT, statlvl: (i) => (i.str + i.def + i.dex + i.agi) / 4 },
+  { name: TASK_TRAIN_HACKING, weight: MAIN_STAT_WEIGHT, statlvl: (i) => i.hack },
+  { name: TASK_TRAIN_CHARISMA, weight: TETRIARY_STAT_WEIGTH, statlvl: (i) => i.cha }
 ];
 
 enum GangTaskType {
-  Unassigned,
-  Warfare,
-  Vigilante,
-  Train,
-  Respect,
-  Money,
+  Unassigned = "Unassigned",
+  Warfare = "Territory Warfare",
+  Vigilante = "Vigilante Justice",
+  Train = "Train",
+  Respect = "Gain Respect",
+  Money = "Gain Money",
 }
 
+/**
+ * check if member has the upgrade or augmentation
+ * 
+ * @param ns netscript interface
+ * @param member member name
+ * @param equip equipment name
+ * @returns whether the member has the equipment
+ */
 function memberHasEquipment(ns: NS, member: string, equip: string): boolean {
   const info = ns.gang.getMemberInformation(member);
   return info.upgrades.includes(equip) || info.augmentations.includes(equip);
 }
 
+/**
+ * get sum of all gang member stats
+ * 
+ * @param info gang member info
+ * @returns sum of all stats
+ */
 function memberStatSum(info: GangMemberInfo): number {
   return info.hack + info.str + info.def + info.dex + info.agi + info.cha;
 }
 
+/**
+ * check if members stat sum is too low compared to max sum
+ * 
+ * @param info gang member info
+ * @param maxStatSum max stat sum
+ * @returns whether the member is too weak
+ */
 function isMemberTooWeak(info: GangMemberInfo, maxStatSum: number): boolean {
   const s = memberStatSum(info);
   return s < MIN_STATS_SUM_ABS || s < MIN_STATS_SUM_FACTOR * maxStatSum;
 }
 
+/**
+ * check if members stat sum is high enough compared to max sum
+ * 
+ * @param info gang member info
+ * @param maxStatSum max stat sum
+ * @returns whether the member is strong enough
+ */
 function isMemberStrongEnough(info: GangMemberInfo, maxStatSum: number): boolean {
   const s = memberStatSum(info);
   return s > MIN_STATS_SUM_ABS && s > MAX_STATS_SUM_FACTOR * maxStatSum;
 }
 
+/**
+ * check if gang power is high enough compared to other gangs
+ * 
+ * @param ns netscript interface
+ * @param gi gang info
+ * @returns whether gang power is high enough
+ */
 function isGangStrongEnough(ns: NS, gi: GangGenInfo) {
   return Object.entries(ns.gang.getOtherGangInformation()).every(([n]) => n == gi.faction || ns.gang.getChanceToWinClash(n) > WARFARE_MIN_WIN_CHANCE);
 }
 
-function getBestTrainTask(info: GangMemberInfo): string {
+/**
+ * find the best training task to perform for a member
+ * 
+ * @param ns netscript interface
+ * @param gi gang info
+ * @param gmi gang member info
+ * @returns name of task to train
+ */
+function getBestTrainTask(ns: NS, gi: GangGenInfo, gmi: GangMemberInfo): string {
   let newTask: string|null = null;
+  const trainTasks = gi.isHacking ? gTrainTasksHacking : gTrainTasksCombat;
 
   // if current task is training and stat level hasn't reached stat level of training task with highest weight
   // continue doing that training task
-  const curTask = gTrainTasksCombat.find((t) => t.name == info.task);
+  const curTask = trainTasks.find((t) => t.name == gmi.task);
   if (curTask) {
-    const maxWeightTask = gTrainTasksCombat.sort((t1, t2) => t2.weight - t1.weight).at(0)!;
-    if (curTask.name != maxWeightTask.name && curTask.statlvl(info) / Math.sqrt(curTask.weight) < maxWeightTask.statlvl(info) / Math.sqrt(maxWeightTask.weight)) {
+    const maxWeightTask = trainTasks.sort((t1, t2) => t2.weight - t1.weight).at(0)!;
+    if (curTask.name != maxWeightTask.name && curTask.statlvl(gmi) / Math.sqrt(curTask.weight) < maxWeightTask.statlvl(gmi) / Math.sqrt(maxWeightTask.weight)) {
       newTask = curTask.name;
     }
   }
 
   // find training task for lowest weighted stats
   if (newTask === null) {
-    const lowestTask = gTrainTasksCombat.sort((t1, t2) => t1.statlvl(info) / t1.weight - t2.statlvl(info) / t2.weight).at(0)!;
+    const lowestTask = trainTasks.sort((t1, t2) => t1.statlvl(gmi) / t1.weight - t2.statlvl(gmi) / t2.weight).at(0)!;
     newTask = lowestTask.name;
   }
 
   return newTask;
 }
 
+/**
+ * find the best task to generate respect for a member
+ * 
+ * @param ns netscript interface
+ * @param gi gang info
+ * @param gmi gang member info
+ * @returns the task that generates the most respect when done by the member
+ */
 function getBestRespectTask(ns: NS, gi: GangGenInfo, gmi: GangMemberInfo): string {
   let newTask = TASK_WARFARE;
   const tasks = ns.gang.getTaskNames().map((t): [string,GangTaskStats] => [t, ns.gang.getTaskStats(t)]);
@@ -133,6 +200,14 @@ function getBestRespectTask(ns: NS, gi: GangGenInfo, gmi: GangMemberInfo): strin
   return newTask;
 }
 
+/**
+ * find the best task to generate money for a member
+ * 
+ * @param ns netscript interface
+ * @param gi gang info
+ * @param gmi gang member info
+ * @returns the task that generates the most money when done by the member
+ */
 function getBestMoneyTask(ns: NS, gi: GangGenInfo, gmi: GangMemberInfo): string {
   let newTask = TASK_WARFARE;
   const tasks = ns.gang.getTaskNames().map((t): [string,GangTaskStats] => [t, ns.gang.getTaskStats(t)]);
@@ -163,13 +238,14 @@ function getBestMoneyTask(ns: NS, gi: GangGenInfo, gmi: GangMemberInfo): string 
 /** @param {NS} ns */
 export async function main(ns: NS) {
   ns.disableLog("ALL");
+  ns.setTitle("GANG");
 
   let taskType: GangTaskType = GangTaskType.Vigilante;
 
   // wait until in a gang
-  while (!ns.gang.inGang()) {
+  if (!ns.gang.inGang()) {
     ns.print("ERROR: not in a gang");
-    await ns.sleep(60000);
+    return;
   }
 
   while (true) {
@@ -180,8 +256,10 @@ export async function main(ns: NS) {
     while (ns.gang.canRecruitMember()) {
       const newMember = ns.sprintf("gm-%02d", members.length);
       if (ns.gang.recruitMember(newMember)) {
-        ns.print(`INFO: recruited member "${newMember}"`);
         members.push(newMember);
+        if (gVerbosity > 0) {
+          ns.print(`INFO: recruited member "${newMember}"`);
+        }
       }
     }
 
@@ -189,7 +267,7 @@ export async function main(ns: NS) {
     for (const m of members) {
       const ar = ns.gang.getAscensionResult(m);
       if (ar && ar.hack * ar.str * ar.def * ar.dex * ar.agi * ar.cha > ASCEND_MULT) {
-        if (ns.gang.ascendMember(m)) {
+        if (ns.gang.ascendMember(m) && gVerbosity > 0) {
           ns.print(`INFO: ascended member "${m}"`);
         }
       }
@@ -204,7 +282,9 @@ export async function main(ns: NS) {
         if (!member)
           break;
         if (ns.gang.purchaseEquipment(member, e)) {
-          ns.print(`INFO: purchased "${e}" for "${member}"`);
+          if (gVerbosity > 0) {
+            ns.print(`INFO: purchased "${e}" for "${member}"`);
+          }
           money -= ec;
         }
       }
@@ -244,8 +324,8 @@ export async function main(ns: NS) {
       let task = i.task;
       if (isMemberTooWeak(i, maxStatSum)) {
         // train if member too weak
-        task = getBestTrainTask(i);
-      } else if (isMemberStrongEnough(i, maxStatSum)) {
+        task = getBestTrainTask(ns, gangInfo, i);
+      } else if (isMemberStrongEnough(i, maxStatSum) || !gTrainTasks.includes(task)) {
         // do general task type if strong enough
         switch (taskType) {
           case GangTaskType.Respect:
@@ -263,11 +343,13 @@ export async function main(ns: NS) {
         }
       }
       if (task != i.task) {
-        if (ns.gang.setMemberTask(m, task)) {
-          ns.print(`switch task for "${m}" to "${task}"`);
+        if (ns.gang.setMemberTask(m, task) && gVerbosity > 0) {
+          ns.print(`INFO: switch task for "${m}" to "${task}"`);
         }
       }
     }
+
+    ns.print(`task: ${taskType}`);
 
     // wait for next update
     if (ns.gang.getBonusTime() > 0) {
