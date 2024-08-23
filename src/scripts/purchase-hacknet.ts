@@ -123,7 +123,7 @@ function getBestUpgrade(ns: NS): Upgrade {
 /** @param {NS} ns */
 export async function main(ns: NS) {
   ns.disableLog("ALL");
-  ns.setTitle("purchase hacknet");
+  ns.setTitle("HACKNET");
 
   while (!ns.fileExists("Formulas.exe", "home")) {
     ns.print("Formulas.exe not found");

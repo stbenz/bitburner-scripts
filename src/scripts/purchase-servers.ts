@@ -3,7 +3,7 @@ import { NS } from "@ns";
 /** @param {NS} ns */
 export async function main(ns: NS) {
   ns.disableLog("ALL");
-  ns.setTitle("purchase servers");
+  ns.setTitle("PURCHASED SERVERS");
 
   // don't spend more than 50% of available money
   const spendRatio = 0.5;
