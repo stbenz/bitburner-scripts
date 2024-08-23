@@ -55,7 +55,7 @@ export async function main(ns: NS) {
     new Tail("scripts/hack-stats.js", 1),
     new Tail("scripts/hwgw-v3.js", 2),
     new Tail("scripts/purchase-hacknet.js", 1),
-    new Tail("scripts/purchase-servers.js", 1, [1024 * 1024]),
+    new Tail("scripts/purchase-servers.js", 1, [256 * 1024]),
     new Tail("scripts/stockmarket.js", 1),
     new Tail("scripts/gang.js", 1),
   ];
