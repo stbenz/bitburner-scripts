@@ -122,12 +122,12 @@ export async function main(ns: NS) {
     // print stock info
     const stockValue = stocks.reduce((a, c) => a + c.getValue(), 0);
     const stockProfit = stocks.reduce((a, c) => a + c.getProfit(), 0);
-    ns.print("capital:      $" + ns.formatNumber(capital));
-    ns.print("cash:         $" + ns.formatNumber(cash));
-    ns.print("stock value:  $" + ns.formatNumber(stockValue));
-    ns.print("stock profit: $" + ns.formatNumber(stockProfit));
-    ns.print("commissions:  $" + ns.formatNumber(commission));
-    ns.print("net profit:   $" + ns.formatNumber(cash + stockValue - capital - commission));
+    ns.printf("capital:             %9s", "$" + ns.formatNumber(capital));
+    ns.printf("cash:                %9s", "$" + ns.formatNumber(cash));
+    ns.printf("stock value:         %9s", "$" + ns.formatNumber(stockValue));
+    ns.printf("stock profit:        %9s", "$" + ns.formatNumber(stockProfit));
+    ns.printf("commissions:         %9s", "$" + ns.formatNumber(commission));
+    ns.printf("net profit:          %9s", "$" + ns.formatNumber(cash + stockValue - capital - commission));
     
     // sell stocks
     const sellStocks = stocks
