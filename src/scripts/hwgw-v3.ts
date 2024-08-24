@@ -10,7 +10,7 @@ import { IResource } from '/lib/interfaces';
 const gHackRemainMoneyRatio = 0.5;
 
 // how much money in percent of max money should remain on the target after hack (max value)
-const gHackMaxRemainMoneyRatio = 0.75;
+const gHackMaxRemainMoneyRatio = 0.95;
 
 // how much money in percent of max money should remain on the target after hack (min value)
 const gHackMinRemainMoneyRatio = 0.1;
@@ -25,7 +25,7 @@ const gHackRemainSuccessDecrease = 0.005;
 const gHackMinMoneyRatio = 0.8;
 
 // time buffer in ms between end of parallel processes
-const gTimeBuffer = 1000;
+const gTimeBuffer = 500;
 
 // minimum chance to consider target for growing
 const gMinChanceForGrow = 0.85;
@@ -40,7 +40,7 @@ const gMaxWeakenProcesses = 10;
 const gMaxGrowProcesses = 10;
 
 // max number of parallel hack+weaken+grow+weaken processes per target
-const gMaxPrallelHackProcesses = 50;
+const gMaxPrallelHackProcesses = 100;
 
 // max number of hack targets (-1 for no limit)
 const gMaxHackTargets = -1;
@@ -408,7 +408,7 @@ export async function main(ns: NS) {
       const numHack = Math.max(1, Math.floor(ns.hackAnalyzeThreads(ht.name, ht.curMoney - hackRemainMoneyRatio * ht.maxMoney)));
       const hackSecIncrease = ns.hackAnalyzeSecurity(numHack);
       const numHackWeaken = Math.ceil(hackSecIncrease / 0.05);
-      const numGrow = Math.max(1, Math.ceil(ns.growthAnalyze(ht.name, 1 / hackRemainMoneyRatio)));
+      const numGrow = Math.max(1, Math.ceil(ns.growthAnalyze(ht.name, Math.max(1, 1 / hackRemainMoneyRatio))));
       const growSecIncrease = ns.growthAnalyzeSecurity(numGrow);
       const numGrowWeaken = Math.ceil(growSecIncrease / 0.05);
 
@@ -503,6 +503,7 @@ export async function main(ns: NS) {
 
         hacksStarted++;
       } else {
+        ns.printf("INFO: current remaining money ratio: %.2f", hackRemainMoneyRatio);
         hacksFailed++;
       }
     }
@@ -512,7 +513,7 @@ export async function main(ns: NS) {
     // decrease remaining money ratio in case of started processes
     // lower remaining money ratio requires more threads to hack/grow
     if (hacksFailed) {
-      hackRemainMoneyRatio = Math.max(
+      hackRemainMoneyRatio = Math.min(
         gHackMaxRemainMoneyRatio, 
         hackRemainMoneyRatio + hacksFailed * gHackRemainErrorIncrease);
     } else if (hacksStarted) {
