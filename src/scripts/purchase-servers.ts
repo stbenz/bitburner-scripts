@@ -9,7 +9,7 @@ export async function main(ns: NS) {
   const spendRatio = 0.5;
 
   // initial ram size to purchase
-  let ram = 64;
+  let ram = 16;
 
   // max ram size to purchase
   let maxRam = -1;
