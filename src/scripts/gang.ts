@@ -69,11 +69,11 @@ const gTrainTasksHacking: ITrainTask[] = [
 
 enum GangTaskType {
   Unassigned = "Unassigned",
-  Warfare = "Territory Warfare",
-  Vigilante = "Vigilante Justice",
-  Train = "Train",
-  Respect = "Gain Respect",
-  Money = "Gain Money",
+  Warfare    = "Warfare",
+  Vigilante  = "Justice",
+  Train      = "Train",
+  Respect    = "Respect",
+  Money      = "Money",
 }
 
 /**
@@ -349,7 +349,9 @@ export async function main(ns: NS) {
       }
     }
 
-    ns.print(`task: ${taskType}`);
+    ns.printf("t: %-7s %8s  %9s", taskType, 
+      ns.formatPercent(gangInfo.territory), 
+      "$" + ns.formatNumber(gangInfo.moneyGainRate * 5));
 
     // wait for next update
     if (ns.gang.getBonusTime() > 0) {
