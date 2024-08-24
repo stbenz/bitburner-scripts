@@ -6,6 +6,12 @@ const gSpendRatio = 0.8;
 // initial "generated" money to get started
 const gInitialMoney = 100000;
 
+// number of nodes to buy if FORMULAS.exe not bought yet
+const gInitialNodes = 3;
+
+// number of levels to buy if FORMULAS.exe not bought yet
+const gInitialLevels = 50;
+
 type Node = { idx: number, sts: NodeStats };
 
 /**
@@ -127,6 +133,20 @@ export async function main(ns: NS) {
 
   while (!ns.fileExists("Formulas.exe", "home")) {
     ns.print("Formulas.exe not found");
+    while (ns.hacknet.numNodes() < gInitialNodes) {
+      ns.hacknet.purchaseNode();
+      await ns.sleep(500);
+    }
+    for (let i = 0; i < ns.hacknet.numNodes(); i++) {
+      let level = ns.hacknet.getNodeStats(i).level;
+      while (level < gInitialLevels) {
+        const buy = Math.min(10, gInitialLevels - level);
+        if (ns.hacknet.upgradeLevel(i, buy)) {
+          level += buy;
+        }
+        await ns.sleep(500);
+      }
+    }
     await ns.sleep(60000);
   }
 
