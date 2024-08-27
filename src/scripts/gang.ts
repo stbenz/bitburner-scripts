@@ -28,7 +28,7 @@ const MIN_STATS_SUM_FACTOR = 0.5;
 const MAX_STATS_SUM_FACTOR = 0.6;
 
 // combat stat weight
-const MAIN_STAT_WEIGHT = 10;
+const MAIN_STAT_WEIGHT = 100;
 
 // hacking stat weight
 const SECONDARY_STAT_WEIGHT = 1.5;
@@ -39,6 +39,7 @@ const TETRIARY_STAT_WEIGTH = 1;
 const TASK_UNASSIGNED = "Unassigned";
 const TASK_WARFARE = "Territory Warfare";
 const TASK_VIGILANTE = "Vigilante Justice";
+const TASK_ETHICAL = "Ethical Hacking";
 
 const TASK_TRAIN_COMBAT = "Train Combat";
 const TASK_TRAIN_HACKING = "Train Hacking";
@@ -338,7 +339,7 @@ export async function main(ns: NS) {
             task = getBestMoneyTask(ns, gangInfo, i);
             break;
           case GangTaskType.Vigilante:
-            task = TASK_VIGILANTE;
+            task = gangInfo.isHacking ? TASK_ETHICAL : TASK_VIGILANTE;
             break;
         }
       }
