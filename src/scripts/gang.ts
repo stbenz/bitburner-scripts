@@ -301,10 +301,10 @@ export async function main(ns: NS) {
     const maxStatSum = Math.max(...members.map((m) => memberStatSum(ns.gang.getMemberInformation(m))));
 
     // decide general gang task
-    if (gangInfo.wantedPenalty < WANTED_PENALTY_THRES_HIGH) {
+    if (gangInfo.wantedPenalty < WANTED_PENALTY_THRES_HIGH && gangInfo.wantedLevel > 1) {
       // wanted penalty too high, do vigilante justice
       taskType = GangTaskType.Vigilante;
-    } else if (gangInfo.wantedPenalty > WANTED_PENALTY_THRES_LOW) {
+    } else if (gangInfo.wantedPenalty > WANTED_PENALTY_THRES_LOW || gangInfo.wantedLevel <= 1) {
       // wanted penalty low enough, do other task
       if (members.length < MAX_NUM_MEMBERS) {
         // maximum number of members not reached, gain respect
