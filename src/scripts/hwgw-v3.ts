@@ -10,7 +10,7 @@ import { IResource } from '/lib/interfaces';
 const gHackRemainMoneyRatio = 0.5;
 
 // how much money in percent of max money should remain on the target after hack (max value)
-const gHackMaxRemainMoneyRatio = 0.95;
+const gHackMaxRemainMoneyRatio = 0.99;
 
 // how much money in percent of max money should remain on the target after hack (min value)
 const gHackMinRemainMoneyRatio = 0.1;
