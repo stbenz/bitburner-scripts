@@ -7,22 +7,22 @@ const MAX_NUM_MEMBERS = 12;
 const ASCEND_MULT = 30;
 
 // only buy equipment if available money is larger than the equipment cost multiplied by this
-const EQUIP_MONEY_MULT = 10;
+const EQUIP_MONEY_MULT = 20;
 
 // gang is powerful enough if power multiplied by this is larget than power of strongest gang
 const WARFARE_MIN_WIN_CHANCE = 0.65;
 
 // start lowering wanted level when above this penalty
-const WANTED_PENALTY_THRES_HIGH = 0.95;
-
-// stop lowering wanted level when below this penalty
-const WANTED_PENALTY_THRES_LOW = 0.99;
+const WANTED_PENALTY_THRES = 0.95;
 
 // don't lower wanted level when below this respect
 const WANTED_MIN_RESPECT = 100;
 
-// absolute minimum stats sum (always train below this)
-const MIN_STATS_SUM_ABS = 300;
+// absolute minimum stats sum for small gang (always train below this)
+const MIN_STATS_SUM_ABS_SMALL = 300;
+
+// absolute minimum stats sum for big gang (always train below this)
+const MIN_STATS_SUM_ABS_BIG = 900;
 
 // relative minimum stats sum factor (start train below this)
 const MIN_STATS_SUM_FACTOR = 0.5;
@@ -110,9 +110,9 @@ function memberStatSum(info: GangMemberInfo): number {
  * @param maxStatSum max stat sum
  * @returns whether the member is too weak
  */
-function isMemberTooWeak(info: GangMemberInfo, maxStatSum: number): boolean {
+function isMemberTooWeak(ns: NS, info: GangMemberInfo, maxStatSum: number): boolean {
   const s = memberStatSum(info);
-  return s < MIN_STATS_SUM_ABS || s < MIN_STATS_SUM_FACTOR * maxStatSum;
+  return s < (ns.gang.getMemberNames().length <= 6 ? MIN_STATS_SUM_ABS_SMALL : MIN_STATS_SUM_ABS_BIG) || s < MIN_STATS_SUM_FACTOR * maxStatSum;
 }
 
 /**
@@ -122,9 +122,9 @@ function isMemberTooWeak(info: GangMemberInfo, maxStatSum: number): boolean {
  * @param maxStatSum max stat sum
  * @returns whether the member is strong enough
  */
-function isMemberStrongEnough(info: GangMemberInfo, maxStatSum: number): boolean {
+function isMemberStrongEnough(ns: NS, info: GangMemberInfo, maxStatSum: number): boolean {
   const s = memberStatSum(info);
-  return s > MIN_STATS_SUM_ABS && s > MAX_STATS_SUM_FACTOR * maxStatSum;
+  return s > (ns.gang.getMemberNames().length <= 6 ? MIN_STATS_SUM_ABS_SMALL : MIN_STATS_SUM_ABS_BIG) && s > MAX_STATS_SUM_FACTOR * maxStatSum;
 }
 
 /**
@@ -194,7 +194,7 @@ function getBestRespectTask(ns: NS, gi: GangGenInfo, gmi: GangMemberInfo): strin
     // use simplified formula to get best task to gain respect
     let max = 0;
     tasks.forEach(([tn, ts]) => {
-      const g = Math.max(0, memberStatSum(gmi) / 80 - ts.difficulty) * ts.baseRespect;
+      const g = Math.max(0, memberStatSum(gmi) / 30 - ts.difficulty) * ts.baseRespect;
       if (g > max) {
         max = g;
         newTask = tn;
@@ -229,7 +229,7 @@ function getBestMoneyTask(ns: NS, gi: GangGenInfo, gmi: GangMemberInfo): string 
     // use simplified formula to get best task to gain money
     let max = 0;
     tasks.forEach(([tn, ts]) => {
-      const g = Math.max(0, memberStatSum(gmi) / 80 - ts.difficulty) * ts.baseMoney;
+      const g = Math.max(0, memberStatSum(gmi) / 30 - ts.difficulty) * ts.baseMoney;
       if (g > max) {
         max = g;
         newTask = tn;
@@ -305,10 +305,10 @@ export async function main(ns: NS) {
     const maxStatSum = Math.max(...members.map((m) => memberStatSum(ns.gang.getMemberInformation(m))));
 
     // decide general gang task
-    if (gangInfo.wantedPenalty < WANTED_PENALTY_THRES_HIGH && gangInfo.wantedLevel > 1 && gangInfo.respect >= WANTED_MIN_RESPECT) {
+    if (gangInfo.wantedPenalty < WANTED_PENALTY_THRES && gangInfo.wantedLevel > 1 && gangInfo.respect >= WANTED_MIN_RESPECT) {
       // wanted penalty too high, do vigilante justice
       taskType = GangTaskType.Vigilante;
-    } else if (gangInfo.wantedPenalty > WANTED_PENALTY_THRES_LOW || gangInfo.wantedLevel <= 1) {
+    } else {
       // wanted penalty low enough, do other task
       if (members.length < MAX_NUM_MEMBERS) {
         // maximum number of members not reached, gain respect
@@ -326,10 +326,10 @@ export async function main(ns: NS) {
     for (const m of members) {
       const i = ns.gang.getMemberInformation(m);
       let task = i.task;
-      if (isMemberTooWeak(i, maxStatSum)) {
+      if (isMemberTooWeak(ns, i, maxStatSum)) {
         // train if member too weak
         task = getBestTrainTask(ns, gangInfo, i);
-      } else if (isMemberStrongEnough(i, maxStatSum) || !gTrainTasks.includes(task)) {
+      } else if (isMemberStrongEnough(ns, i, maxStatSum) || !gTrainTasks.includes(task)) {
         // do general task type if strong enough
         switch (taskType) {
           case GangTaskType.Respect:
