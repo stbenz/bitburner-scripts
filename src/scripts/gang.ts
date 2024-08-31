@@ -18,6 +18,9 @@ const WANTED_PENALTY_THRES_HIGH = 0.95;
 // stop lowering wanted level when below this penalty
 const WANTED_PENALTY_THRES_LOW = 0.99;
 
+// don't lower wanted level when below this respect
+const WANTED_MIN_RESPECT = 100;
+
 // absolute minimum stats sum (always train below this)
 const MIN_STATS_SUM_ABS = 300;
 
@@ -191,7 +194,7 @@ function getBestRespectTask(ns: NS, gi: GangGenInfo, gmi: GangMemberInfo): strin
     // use simplified formula to get best task to gain respect
     let max = 0;
     tasks.forEach(([tn, ts]) => {
-      const g = Math.max(0, memberStatSum(gmi) / 6 - ts.difficulty) * ts.baseRespect;
+      const g = Math.max(0, memberStatSum(gmi) / 80 - ts.difficulty) * ts.baseRespect;
       if (g > max) {
         max = g;
         newTask = tn;
@@ -226,7 +229,7 @@ function getBestMoneyTask(ns: NS, gi: GangGenInfo, gmi: GangMemberInfo): string 
     // use simplified formula to get best task to gain money
     let max = 0;
     tasks.forEach(([tn, ts]) => {
-      const g = Math.max(0, memberStatSum(gmi) / 6 - ts.difficulty) * ts.baseMoney;
+      const g = Math.max(0, memberStatSum(gmi) / 80 - ts.difficulty) * ts.baseMoney;
       if (g > max) {
         max = g;
         newTask = tn;
@@ -241,7 +244,7 @@ export async function main(ns: NS) {
   ns.disableLog("ALL");
   ns.setTitle("GANG");
 
-  let taskType: GangTaskType = GangTaskType.Vigilante;
+  let taskType: GangTaskType = GangTaskType.Respect;
 
   // wait until in a gang
   if (!ns.gang.inGang()) {
@@ -302,7 +305,7 @@ export async function main(ns: NS) {
     const maxStatSum = Math.max(...members.map((m) => memberStatSum(ns.gang.getMemberInformation(m))));
 
     // decide general gang task
-    if (gangInfo.wantedPenalty < WANTED_PENALTY_THRES_HIGH && gangInfo.wantedLevel > 1) {
+    if (gangInfo.wantedPenalty < WANTED_PENALTY_THRES_HIGH && gangInfo.wantedLevel > 1 && gangInfo.respect >= WANTED_MIN_RESPECT) {
       // wanted penalty too high, do vigilante justice
       taskType = GangTaskType.Vigilante;
     } else if (gangInfo.wantedPenalty > WANTED_PENALTY_THRES_LOW || gangInfo.wantedLevel <= 1) {
