@@ -10,13 +10,13 @@ const ASCEND_MULT = 30;
 const EQUIP_MONEY_MULT = 20;
 
 // gang is powerful enough if power multiplied by this is larget than power of strongest gang
-const WARFARE_MIN_WIN_CHANCE = 0.65;
+const WARFARE_MIN_WIN_CHANCE = 0.50;
 
 // start lowering wanted level when above this penalty
 const WANTED_PENALTY_THRES = 0.95;
 
-// don't lower wanted level when below this respect
-const WANTED_MIN_RESPECT = 100;
+// gain respect when below this
+const MIN_RESPECT = 100;
 
 // absolute minimum stats sum for small gang (always train below this)
 const MIN_STATS_SUM_ABS_SMALL = 300;
@@ -305,7 +305,9 @@ export async function main(ns: NS) {
     const maxStatSum = Math.max(...members.map((m) => memberStatSum(ns.gang.getMemberInformation(m))));
 
     // decide general gang task
-    if (gangInfo.wantedPenalty < WANTED_PENALTY_THRES && gangInfo.wantedLevel > 1 && gangInfo.respect >= WANTED_MIN_RESPECT) {
+    if (gangInfo.respect < MIN_RESPECT) {
+      taskType = GangTaskType.Respect;
+    } else if (gangInfo.wantedPenalty < WANTED_PENALTY_THRES && gangInfo.wantedLevel > 1) {
       // wanted penalty too high, do vigilante justice
       taskType = GangTaskType.Vigilante;
     } else {
