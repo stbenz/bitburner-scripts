@@ -46,7 +46,10 @@ const gMaxPrallelHackProcesses = 100;
 const gMaxHackTargets = -1;
 
 // min share process RAM
-const gMinShareRam = 8 * 1024;
+const gMinShareRam = 1024;
+
+// multiplier of min purchased server RAM to not use for share
+const gShareMinKeepFree = 3;
 
 // tail verbosity
 const gVerbosity = 0;
@@ -536,7 +539,7 @@ export async function main(ns: NS) {
     ];
 
     // start share processes until less than min purchased server RAM is used or start failed
-    while (resources.reduce((a, c) => a + c.ram, 0) > Math.max(gMinShareRam, minPurchasedRam)) {
+    while (resources.reduce((a, c) => a + c.ram, 0) > Math.max(gMinShareRam, minPurchasedRam) * gShareMinKeepFree) {
       const r = startScripts(ns, resources, shareScripts);
       if (r == null || r.length == 0) {
         ns.print("WARN " + "start share failed");
