@@ -74,20 +74,9 @@ export async function main(ns: NS) {
   const sc = ns.stock.getConstants();
 
   // buy access to stock market
-  if (!ns.stock.hasWSEAccount() && !ns.stock.purchaseWseAccount()) {
-    ns.print("ERROR: failed to purchase WSE account");
-    return;
-  }
-  if (!ns.stock.hasTIXAPIAccess() && !ns.stock.purchaseTixApi()) {
-    ns.print("ERROR: failed to purchase TIX API access");
-    return;
-  }
-  if (!ns.stock.has4SData() && !ns.stock.purchase4SMarketData()) {
-    ns.print("ERROR: failed to purchase 4S data");
-    return;
-  }
-  if (!ns.stock.has4SDataTIXAPI() && !ns.stock.purchase4SMarketDataTixApi()) {
-    ns.print("ERROR: failed to purchase 4S data TIX API");
+  if (!ns.stock.hasWSEAccount() || !ns.stock.hasTIXAPIAccess() || 
+      !ns.stock.has4SData() || !ns.stock.has4SDataTIXAPI()) {
+    ns.print("ERROR: missing WSE API components");
     return;
   }
 
