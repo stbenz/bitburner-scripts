@@ -7,6 +7,8 @@ class Tail {
   script: string;
   lines: number;
   args: ScriptArg[];
+  target: string;
+  deps: string[];
 
   /**
    * create tail
@@ -15,10 +17,12 @@ class Tail {
    * @param lines number of tail lines
    * @param args optional arguments to the script
    */
-  constructor(script: string, lines: number, args?: ScriptArg[]) {
+  constructor(script: string, lines: number, args?: ScriptArg[], target?: string, deps?: string[]) {
     this.script = script;
     this.lines = lines;
     this.args = args ?? [];
+    this.target = target ?? "home";
+    this.deps = deps ?? [];
   }
 
   /**
@@ -28,13 +32,19 @@ class Tail {
    * @returns PID
    */
   getOrStart(ns: NS): number {
-    let info = ns.getRunningScript(this.script, ns.getHostname(), ...this.args);
+    let info = ns.getRunningScript(this.script, this.target, ...this.args);
     if (info != null) {
       ns.tprint("showing " + this.script);
       return info.pid;
     } else {
-      ns.tprint("starting " + this.script);
-      return ns.run(this.script, 1, ...this.args);
+      ns.tprint("copying " + this.script);
+      ns.scp(this.script, this.target, "home");
+      for (const d of this.deps) {
+        ns.tprint("copying " + d);
+        ns.scp(d, this.target, "home");
+      }
+      ns.tprint("starting " + this.script + " on " + this.target);
+      return ns.exec(this.script, this.target, 1, ...this.args);
     }
   }
 }
@@ -52,11 +62,12 @@ export async function main(ns: NS) {
 
   // tail list
   const tailList = [
-    new Tail("scripts/hack-stats.js", 1),
-    new Tail("scripts/hwgw-v3.js", 2),
-    new Tail("scripts/purchase-hacknet.js", 1),
-    new Tail("scripts/purchase-servers.js", 1, [1024 * 1024]),
-    new Tail("scripts/stockmarket.js", 1),
+    new Tail("scripts/purchase-hacknet.js", 1, [], "sigma-cosmetics"),
+    new Tail("scripts/purchase-servers.js", 1, [1024 * 1024], "sigma-cosmetics"),
+    new Tail("scripts/purchase-stockmarket.js", 1, [], "joesguns"),
+    new Tail("scripts/stockmarket.js", 1, [], "iron-gym"),
+    new Tail("scripts/hack-stats.js", 1, [], "foodnstuff"),
+    new Tail("scripts/hwgw-v3.js", 2, [], "foodnstuff", ["lib/targetlib.js"]),
     new Tail("scripts/gang.js", 1),
   ];
 
