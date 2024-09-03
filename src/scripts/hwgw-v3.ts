@@ -85,7 +85,7 @@ interface IScript {
  */
 function reserveScriptRam(ns: NS, resources: IResource[], script: string, numThreads: number, allowLess = false): IReservation|null {
   // get required RAM to run numThreads of script
-  let scriptRam = ns.getScriptRam(script) * numThreads;
+  let scriptRam = ns.getScriptRam(script, "home") * numThreads;
 
   // get suitable servers sorted by RAM ascending
   let suitable = resources
@@ -93,7 +93,7 @@ function reserveScriptRam(ns: NS, resources: IResource[], script: string, numThr
 
   // if less is allowed, find the maximum number of threads
   while (allowLess && numThreads > 1 && suitable.length == 0) {
-    scriptRam = ns.getScriptRam(script) * (--numThreads);
+    scriptRam = ns.getScriptRam(script, "home") * (--numThreads);
     suitable = resources
       .filter((s) => s.ram >= scriptRam);
   }
@@ -125,7 +125,7 @@ function reserveScriptRam(ns: NS, resources: IResource[], script: string, numThr
  */
 function startReservation(ns: NS, reservation: IReservation, ...scriptArgs: ScriptArg[]): IProcess|null {
   if (!ns.fileExists(reservation.script, reservation.res.name)) {
-    ns.scp(reservation.script, reservation.res.name);
+    ns.scp(reservation.script, reservation.res.name, "home");
   }
   const p = ns.exec(reservation.script, reservation.res.name, 
     reservation.threads, ...scriptArgs);
@@ -528,7 +528,7 @@ export async function main(ns: NS) {
     // prepare script for share
     // use half of min purchased server RAM per process but not less than 1TB
     const minPurchasedRam = Math.min(...ns.getPurchasedServers().map((s) => ns.getServerMaxRam(s)));
-    const shareScriptRam = ns.getScriptRam("scripts/do-share.js");
+    const shareScriptRam = ns.getScriptRam("scripts/do-share.js", "home");
     const shareThreads = Math.max(gMinShareRam, minPurchasedRam / 2) / shareScriptRam;
     const shareScripts: IScript[] = [
       {

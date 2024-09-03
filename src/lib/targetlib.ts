@@ -24,37 +24,37 @@ export function gainRoot(ns: NS, target: string, recursive = false, parent: stri
     // gain root access if required
     if (!hasRoot) {
       // 5 ports requires SQLInject.exe
-      if (numPortsReq == 5 && ns.fileExists("SQLInject.exe")) {
+      if (numPortsReq == 5 && ns.fileExists("SQLInject.exe", "home")) {
         ns.sqlinject(target);
         numPortsReq--;
       }
 
       // 4 ports requires HTTPWorm.exe
-      if (numPortsReq == 4 && ns.fileExists("HTTPWorm.exe")) {
+      if (numPortsReq == 4 && ns.fileExists("HTTPWorm.exe", "home")) {
         ns.httpworm(target);
         numPortsReq--;
       }
 
       // 3 ports requires relaySMTP.exe
-      if (numPortsReq == 3 && ns.fileExists("relaySMTP.exe")) {
+      if (numPortsReq == 3 && ns.fileExists("relaySMTP.exe", "home")) {
         ns.relaysmtp(target);
         numPortsReq--;
       }
 
       // 2 ports requires FTPCrack.exe
-      if (numPortsReq == 2 && ns.fileExists("FTPCrack.exe")) {
+      if (numPortsReq == 2 && ns.fileExists("FTPCrack.exe", "home")) {
         ns.ftpcrack(target);
         numPortsReq--;
       }
 
       // 1 port requires BruteSSH.exe
-      if (numPortsReq == 1 && ns.fileExists("BruteSSH.exe")) {
+      if (numPortsReq == 1 && ns.fileExists("BruteSSH.exe", "home")) {
         ns.brutessh(target);
         numPortsReq--;
       }
 
       // gain root through NUKE.exe
-      if (numPortsReq == 0 && ns.fileExists("NUKE.exe") && 
+      if (numPortsReq == 0 && ns.fileExists("NUKE.exe", "home") && 
           ns.getHackingLevel() >= ns.getServerRequiredHackingLevel(target)) {
         ns.nuke(target);
         hasRoot = true;
