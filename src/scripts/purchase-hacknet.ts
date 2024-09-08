@@ -7,10 +7,13 @@ const gSpendRatio = 0.8;
 const gInitialMoney = 100000;
 
 // number of nodes to buy if FORMULAS.exe not bought yet
-const gInitialNodes = 3;
+const gInitialNodes = 4;
 
 // number of levels to buy if FORMULAS.exe not bought yet
 const gInitialLevels = 50;
+
+// number of RAM to buy if FORMULAS.exe not bought yet
+const gInitialRam = 2;
 
 type Node = { idx: number, sts: NodeStats };
 
@@ -131,23 +134,32 @@ export async function main(ns: NS) {
   ns.disableLog("ALL");
   ns.setTitle("HACKNET");
 
-  while (!ns.fileExists("Formulas.exe", "home")) {
-    ns.print("Formulas.exe not found");
-    while (ns.hacknet.numNodes() < gInitialNodes) {
-      ns.hacknet.purchaseNode();
+  // buy initial nodes and upgrades to join Netburners
+  while (ns.hacknet.numNodes() < gInitialNodes) {
+    ns.hacknet.purchaseNode();
+    await ns.sleep(500);
+  }
+  for (let i = 0; i < ns.hacknet.numNodes(); i++) {
+    let level = ns.hacknet.getNodeStats(i).level;
+    let ram = ns.hacknet.getNodeStats(i).ram;
+    while (level < gInitialLevels) {
+      const buy = Math.min(10, gInitialLevels - level);
+      if (ns.hacknet.upgradeLevel(i, buy)) {
+        level += buy;
+      }
       await ns.sleep(500);
     }
-    for (let i = 0; i < ns.hacknet.numNodes(); i++) {
-      let level = ns.hacknet.getNodeStats(i).level;
-      while (level < gInitialLevels) {
-        const buy = Math.min(10, gInitialLevels - level);
-        if (ns.hacknet.upgradeLevel(i, buy)) {
-          level += buy;
-        }
-        await ns.sleep(500);
+    while (ram < gInitialRam) {
+      if (ns.hacknet.upgradeRam(i, 1)) {
+        ram *= 2;
       }
+      await ns.sleep(500);
     }
-    await ns.sleep(60000);
+  }
+
+  while (!ns.fileExists("Formulas.exe", "home")) {
+    ns.print("Formulas.exe not found");
+    await ns.sleep(10000);
   }
 
   while (true) {
