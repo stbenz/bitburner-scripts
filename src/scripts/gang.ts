@@ -30,15 +30,6 @@ const MIN_STATS_SUM_FACTOR = 0.5;
 // relative maximum stats sum factor (stop train above this)
 const MAX_STATS_SUM_FACTOR = 0.6;
 
-// combat stat weight
-const MAIN_STAT_WEIGHT = 100;
-
-// hacking stat weight
-const SECONDARY_STAT_WEIGHT = 1.5;
-
-// charisma stat weight
-const TETRIARY_STAT_WEIGTH = 1;
-
 const TASK_UNASSIGNED = "Unassigned";
 const TASK_WARFARE = "Territory Warfare";
 const TASK_VIGILANTE = "Vigilante Justice";
@@ -60,15 +51,15 @@ const gVerbosity = 0;
 const gTrainTasks = [TASK_TRAIN_COMBAT, TASK_TRAIN_HACKING, TASK_TRAIN_CHARISMA];
 
 const gTrainTasksCombat: ITrainTask[] = [
-  { name: TASK_TRAIN_COMBAT, weight: MAIN_STAT_WEIGHT, statlvl: (i) => (i.str + i.def + i.dex + i.agi) / 4 },
-  { name: TASK_TRAIN_HACKING, weight: SECONDARY_STAT_WEIGHT, statlvl: (i) => i.hack },
-  { name: TASK_TRAIN_CHARISMA, weight: TETRIARY_STAT_WEIGTH, statlvl: (i) => i.cha }
+  { name: TASK_TRAIN_COMBAT, weight: 100, statlvl: (i) => (i.str + i.def + i.dex + i.agi) / 4 },
+  { name: TASK_TRAIN_HACKING, weight: 5, statlvl: (i) => i.hack },
+  { name: TASK_TRAIN_CHARISMA, weight: 1, statlvl: (i) => i.cha }
 ];
 
 const gTrainTasksHacking: ITrainTask[] = [
-  { name: TASK_TRAIN_COMBAT, weight: SECONDARY_STAT_WEIGHT, statlvl: (i) => (i.str + i.def + i.dex + i.agi) / 4 },
-  { name: TASK_TRAIN_HACKING, weight: MAIN_STAT_WEIGHT, statlvl: (i) => i.hack },
-  { name: TASK_TRAIN_CHARISMA, weight: TETRIARY_STAT_WEIGTH, statlvl: (i) => i.cha }
+  { name: TASK_TRAIN_COMBAT, weight: 20, statlvl: (i) => (i.str + i.def + i.dex + i.agi) / 4 },
+  { name: TASK_TRAIN_HACKING, weight: 100, statlvl: (i) => i.hack },
+  { name: TASK_TRAIN_CHARISMA, weight: 1, statlvl: (i) => i.cha }
 ];
 
 enum GangTaskType {
