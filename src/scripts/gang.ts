@@ -51,15 +51,17 @@ const gVerbosity = 0;
 const gTrainTasks = [TASK_TRAIN_COMBAT, TASK_TRAIN_HACKING, TASK_TRAIN_CHARISMA];
 
 const gTrainTasksCombat: ITrainTask[] = [
-  { name: TASK_TRAIN_COMBAT, weight: 100, statlvl: (i) => (i.str + i.def + i.dex + i.agi) / 4 },
-  { name: TASK_TRAIN_HACKING, weight: 5, statlvl: (i) => i.hack },
-  { name: TASK_TRAIN_CHARISMA, weight: 1, statlvl: (i) => i.cha }
+  { name: TASK_TRAIN_COMBAT, weight: 100, statlvl: (i) => 
+    (i.str / i.str_mult + i.def / i.def_mult + i.dex / i.dex_mult + i.agi / i.agi_mult) / 4 },
+  { name: TASK_TRAIN_HACKING, weight: 10, statlvl: (i) => i.hack / i.hack_mult },
+  { name: TASK_TRAIN_CHARISMA, weight: 1, statlvl: (i) => i.cha / i.cha_mult }
 ];
 
 const gTrainTasksHacking: ITrainTask[] = [
-  { name: TASK_TRAIN_COMBAT, weight: 20, statlvl: (i) => (i.str + i.def + i.dex + i.agi) / 4 },
-  { name: TASK_TRAIN_HACKING, weight: 100, statlvl: (i) => i.hack },
-  { name: TASK_TRAIN_CHARISMA, weight: 1, statlvl: (i) => i.cha }
+  { name: TASK_TRAIN_COMBAT, weight: 20, statlvl: (i) => 
+    (i.str / i.str_mult + i.def / i.def_mult + i.dex / i.dex_mult + i.agi / i.agi_mult) / 4 },
+  { name: TASK_TRAIN_HACKING, weight: 100, statlvl: (i) => i.hack / i.hack_mult },
+  { name: TASK_TRAIN_CHARISMA, weight: 1, statlvl: (i) => i.cha / i.cha_mult }
 ];
 
 enum GangTaskType {
@@ -85,6 +87,21 @@ function memberHasEquipment(ns: NS, member: string, equip: string): boolean {
 }
 
 /**
+ * get sum of all gang member base stats without multiplier
+ * 
+ * @param info gang member info
+ * @returns sum of all stats
+ */
+function memberBaseStatSum(info: GangMemberInfo): number {
+  return info.hack / info.hack_mult + 
+    info.str / info.str_mult + 
+    info.def / info.def_mult + 
+    info.dex / info.dex_mult + 
+    info.agi / info.agi_mult + 
+    info.cha / info.cha_mult;
+}
+
+/**
  * get sum of all gang member stats
  * 
  * @param info gang member info
@@ -102,7 +119,7 @@ function memberStatSum(info: GangMemberInfo): number {
  * @returns whether the member is too weak
  */
 function isMemberTooWeak(ns: NS, info: GangMemberInfo, maxStatSum: number): boolean {
-  const s = memberStatSum(info);
+  const s = memberBaseStatSum(info);
   return s < (ns.gang.getMemberNames().length <= 6 ? MIN_STATS_SUM_ABS_SMALL : MIN_STATS_SUM_ABS_BIG) || s < MIN_STATS_SUM_FACTOR * maxStatSum;
 }
 
@@ -114,7 +131,7 @@ function isMemberTooWeak(ns: NS, info: GangMemberInfo, maxStatSum: number): bool
  * @returns whether the member is strong enough
  */
 function isMemberStrongEnough(ns: NS, info: GangMemberInfo, maxStatSum: number): boolean {
-  const s = memberStatSum(info);
+  const s = memberBaseStatSum(info);
   return s > (ns.gang.getMemberNames().length <= 6 ? MIN_STATS_SUM_ABS_SMALL : MIN_STATS_SUM_ABS_BIG) && s > MAX_STATS_SUM_FACTOR * maxStatSum;
 }
 
@@ -293,7 +310,7 @@ export async function main(ns: NS) {
     ns.gang.setTerritoryWarfare(powerfulEnough);
 
     // get highest member stat sum
-    const maxStatSum = Math.max(...members.map((m) => memberStatSum(ns.gang.getMemberInformation(m))));
+    const maxStatSum = Math.max(...members.map((m) => memberBaseStatSum(ns.gang.getMemberInformation(m))));
 
     // decide general gang task
     if (gangInfo.respect < MIN_RESPECT) {
