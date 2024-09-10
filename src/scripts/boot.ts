@@ -64,7 +64,7 @@ export async function main(ns: NS) {
   const tailList = [
     new Tail("scripts/purchase-hacknet.js", 1, [], "sigma-cosmetics"),
     new Tail("scripts/purchase-servers.js", 1, [1024 * 1024], "sigma-cosmetics"),
-    new Tail("scripts/purchase-stockmarket.js", 1, [], "joesguns"),
+    new Tail("scripts/purchase-stockmarket.js", 1),
     new Tail("scripts/stockmarket.js", 1),
     new Tail("scripts/hack-stats.js", 1, [], "foodnstuff"),
     new Tail("scripts/hwgw-v3.js", 2, [], "foodnstuff", ["lib/targetlib.js"]),
